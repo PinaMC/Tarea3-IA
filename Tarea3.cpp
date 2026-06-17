@@ -49,8 +49,6 @@ public:
   {
     // crear un input stream a partir de la cadena, ahora puedes usar >>, etc.
     // como para cin
-    // create input stream from string, now you can use >>, etc.
-    // like for cin
     istringstream is(s);
     char c;
 
@@ -140,34 +138,99 @@ public:
 
 private:
 
-  // P1 or P2 to move  
+  //P1 o P2 mueve
   int to_move;
-
-  // squares (2d array)
-  // stores P1,0,P2 values
-  // bounds are checked in debug mode
-  // and sq[y][x] = 0 works
   array<array<signed char, N>, N> sq;
-
-  // numero de casillas ocupadas
-  int filled;           
-};
-
-
-//para los jugadores
-class jugador
-{
-public:
-    jugador(int player) : player(player) {}
-    int get_player() const { return player; }
-private:
-    int player;
-    
+  int filled; // numero de casillas ocupadas
 };
 
 //como se muestran las piezas en el tablero
 // P1, empty, P2
 const array<char, 3> State::DISP = {{ 'o', '-', 'x' }};
+
+// Retorna P1, P2 o 0 si no hay ganador aun
+int check_winner(const State& st)
+{
+  
+  int N = State::N; //Para no escribir lo mismo todo el rato.
+
+  //if val=0 continue porque al estar vacía no hay ganador,
+  //if val!=0 se revisa si todas las filas o columnas son iguales a val,
+  //si hay != break xq !gano si all= val, gano=true y return val= winner
+
+  // Revisa filas
+  for (int y = 0; y < N; ++y) {
+    int val = st.get(0, y);
+    
+    if (val == 0){
+      continue; //Continue significa que se "salta" ekl resto del codigo y pasa a la siguiente fila(for);
+    }
+    
+    bool gano = true;
+
+    for (int x = 1; x < N; ++x) {
+      if (st.get(x, y) != val) {
+        gano = false; break; //Break significa que se sale del for y no se siguen revisando las casillas de esa fila. 
+      }
+    }
+    if (gano) return val;
+  }
+
+  // Revisa columnas
+  for (int x = 0; x < N; ++x) {
+    int val = st.get(x, 0);
+    if (val == 0) continue;
+    bool gano = true;
+    for (int y = 1; y < N; ++y) {
+      if (st.get(x, y) != val) { gano = false; break; }
+    }
+    if (gano) return val;
+  }
+
+  // Revisa diagonales (desde la esquina up-izquierda y  up-derecha)
+  int val = st.get(0, 0);
+  if (val != 0) {
+    bool gano = true;
+    for (int i = 1; i < N; ++i) {
+      if (st.get(i, i) != val) {
+        gano = false;
+        break;
+      }
+    }
+    if (gano) return val;
+  }
+
+  val = st.get(0, N - 1);
+  if (val != 0) {
+    bool gano = true;
+    for (int i = 1; i < N; ++i) {
+      if (st.get(i, N - 1 - i) != val) {
+        gano = false;
+        break;
+      }
+    }
+    if (gano) return val;
+  }
+
+  return 0; // no hay ganador aún
+}
+
+//Funicon de evaluar para Minimax
+int evaluate(const State &st){
+  int winner = check_winner(st);
+
+  if (winner == State::P1) {
+    return 10; // P1 win
+  } 
+  else if (winner == State::P2) {
+    return -10; // P2 win
+  }
+  else {
+    return 0; // empate-no winner
+  }
+}
+
+
 
 
 int menuInicial(){
@@ -185,12 +248,12 @@ int menuInicial(){
   return tipoJP;
 }
 
-
-void randomMove(const State &st, int player, int &x, int &y){
-
+//Jugador aleatorio (return x,y)
+void randomMove(const State &st, int &x, int &y){
 
   //casillas disponibles
   vector<pair<int,int>> availableMoves;
+  
   for (int i = 0; i < State::N; ++i) {
     for (int j = 0; j < State::N; ++j) {
       if (st.get(i, j) == 0) {
@@ -199,10 +262,22 @@ void randomMove(const State &st, int player, int &x, int &y){
     }
   }
 
-}      
+  // Seleccionar una casilla disponible al azar
+  if (!availableMoves.empty()) {
+    int idx = rand() % availableMoves.size();
+    x = availableMoves[idx].first;
+    y = availableMoves[idx].second;
+  }
+  else {
+    x = -1; // No hay movimientos disponibles
+    y = -1;
+  }
+}
+
 int main()
 {
 
+  /*
   std::vector<string> boards
   {
     "--- \
@@ -241,6 +316,7 @@ int main()
      -x- \
      ---"  // x wins with (0,0)
   };
+  
 
   for (const string & s : boards) {
     //construye el estado a partir de la cadena
@@ -259,4 +335,6 @@ int main()
       cerr << "corrupt input: " << s << endl;
     }
   }
+  */
+
 }
